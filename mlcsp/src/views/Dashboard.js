@@ -19,21 +19,22 @@ import {
 } from "react-bootstrap";
 
 function Dashboard() {
-  const getAuthenticatedUsersFromServerURL = "http://172.17.41.60:9080/api/getAuthenticatedUsers";
-  const clearAuthenticatedUsersFromServerURL = "http://172.17.41.60:9080/api/clearAuthenticatedUsers";
-  const createUserFromServerURL = "http://172.17.41.60:9080/api/createUser";
-  const authenticateUserFromServerURL = "http://172.17.41.60:9080/api/authenticateUser";
-  const shareMissileCodeFromServerURL = "http://172.17.41.60:9080/api/shareMissileCode";
-  const recreateSecretFromServerURL = "http://172.17.41.60:9080/api/recreateSecret";
-  const generateMissileCodesFromServerURL = "http://172.17.41.60:9080/api/generateMissileCodes";
+  const getAuthenticatedUsersFromServerURL = "http://192.168.43.231:9080/api/getAuthenticatedUsers";
+  const clearAuthenticatedUsersFromServerURL = "http://192.168.43.231:9080/api/clearAuthenticatedUsers";
+  const createUserFromServerURL = "http://192.168.43.231:9080/api/createUser";
+  const authenticateUserFromServerURL = "http://192.168.43.231:9080/api/authenticateUser";
+  const shareMissileCodeFromServerURL = "http://192.168.43.231:9080/api/shareMissileCode";
+  const recreateSecretFromServerURL = "http://192.168.43.231:9080/api/recreateSecret";
+  const generateMissileCodesFromServerURL = "http://192.168.43.231:9080/api/generateMissileCodes";
   const [authenticatedUsers, setAuthenticatedUsers] = useState([]);
   const [authenticatedUsersUpdated, setauthenticatedUsersUpdated] = useState(true);
   const [authenticateCreateToggle, setauthenticateCreateToggle] = useState(true);
-  const [generateCodeToggle, setgenerateCodeToggle] = useState(true);
+  const [reconstructToggle, setreconstructToggle] = useState(true);
+  const [generateCodeToggle, setgenerateCodeToggle] = useState(false);
   const [userName, setuserName] = useState("");
   const [password, setpassword] = useState("");
-  const [T, setT] = useState("");
-  const [N, setN] = useState("");
+  const [Tvalue, setTvalue] = useState("");
+  const [Nvalue, setNvalue] = useState("");
   useEffect(() => {
     axios
       .get(getAuthenticatedUsersFromServerURL)
@@ -49,29 +50,7 @@ function Dashboard() {
   }, [authenticatedUsersUpdated]);
 
   let clearAuthenticatedUsers = () => {
-    axios
-      .post(clearAuthenticatedUsersFromServerURL)
-      .then((response) => {
-        console.log("result from getAuthenticatedUsers", response);
-        setAuthenticatedUsers(response.data);
-        console.log("authenticated users", authenticatedUsers);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-    axios
-      .get(getAuthenticatedUsersFromServerURL)
-      .then((response) => {
-        console.log("result from getAuthenticatedUsers", response);
-        setAuthenticatedUsers(response.data);
-        console.log("authenticated users", authenticatedUsers);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
 
-    alert("Authenticated Users Cleared!");
-    setauthenticatedUsersUpdated(!authenticatedUsersUpdated);
   }
 
   let emptyFunction = () => {
@@ -114,34 +93,47 @@ function Dashboard() {
                       {authenticateCreateToggle ? <div>
                         <button onClick={() => {
                           axios
-                            .post(createUserFromServerURL)
+                            .get(createUserFromServerURL)
                             .then((response) => {
                               console.log("result from createUser", response);
-                              alert(response);
+                              alert(response.data);
                             })
                             .catch((error) => {
                               console.log(error);
+                              alert(error)
                             });
 
                         }}>Create</button>
                         <span> </span>
                         <button onClick={() => {
                           setauthenticateCreateToggle(!authenticateCreateToggle);
+
                         }}>Authenticate</button>
                       </div> : <><button onClick={() => {
                         setauthenticateCreateToggle(!authenticateCreateToggle);
+                        const params = new URLSearchParams([['username', userName], ['paassword', password]]);
+                        axios
+                          .get(authenticateUserFromServerURL, { params })
+                          .then((response) => {
+                            console.log("result from authenticateUsers", response.data);
+                            alert("Generated secret using N & T: " + response.data.Secret);
+                          })
+                          .catch((error) => {
+                            console.log(error);
+                          });
                       }}>Authenticate</button>
                         <span> </span>
                         <button onClick={() => {
                           axios
-                            .post(createUserFromServerURL)
+                            .get(createUserFromServerURL)
                             .then((response) => {
                               console.log("result from createUser", response);
 
-                              alert(response);
+                              alert(response.data);
                             })
                             .catch((error) => {
                               console.log(error);
+                              alert(error)
                             });
                         }}>Create</button></>}
 
@@ -158,16 +150,17 @@ function Dashboard() {
                     <p className="card-category">Generate missile code and shares using N and T</p>
                     <div>
                       {generateCodeToggle ? <form>
+
                         <p>T:</p>
                         <input
                           type='text'
-                          onChange={(e) => setT(e.target.value)}
+                          onChange={(e) => setTvalue(e.target.value)}
                         />
                         <br></br>
                         <p>N:</p>
                         <input
                           type='text'
-                          onChange={(e) => setN(e.target.value)}
+                          onChange={(e) => setNvalue(e.target.value)}
                         />
                       </form> : <></>
                       }
@@ -179,6 +172,16 @@ function Dashboard() {
                     <div className="stats">
                       {generateCodeToggle ? <button onClick={() => {
                         setgenerateCodeToggle(!generateCodeToggle);
+                        const params = new URLSearchParams([['T', Tvalue], ['N', Nvalue]]);
+                        axios
+                          .get(generateMissileCodesFromServerURL, { params })
+                          .then((response) => {
+                            console.log("result from shareMissileCode", response.data);
+                            alert("Generated secret using N & T: " + response.data.Secret);
+                          })
+                          .catch((error) => {
+                            console.log(error);
+                          });
                       }}>Generate</button> : <button onClick={() => {
                         setgenerateCodeToggle(!generateCodeToggle);
                       }}>Expand</button>
@@ -201,9 +204,10 @@ function Dashboard() {
                     <div className="stats">
                       <button onClick={() => {
                         axios
-                          .post(shareMissileCodeFromServerURL)
+                          .get(shareMissileCodeFromServerURL)
                           .then((response) => {
                             console.log("result from shareMissileCode", response);
+                            alert(response.data.Status);
                           })
                           .catch((error) => {
                             console.log(error);
@@ -220,12 +224,14 @@ function Dashboard() {
                     <p className="card-category">Reconstruct secret using shares from T authenticated users</p>
                     <br></br>
                   </Card.Header>
+
                   <Card.Footer>
                     <hr></hr>
                     <div className="stats">
                       <button onClick={() => {
+                        setreconstructToggle(!reconstructToggle);
                         axios
-                          .post(recreateSecretFromServerURL)
+                          .get(recreateSecretFromServerURL)
                           .then((response) => {
                             console.log("result from recreateSecret", response);
                           })
@@ -266,7 +272,31 @@ function Dashboard() {
               <Card.Footer>
                 <hr></hr>
                 <div className="stats">
-                  <button onClick={clearAuthenticatedUsers}>Clear Authenticated Users</button>
+                  <button onClick={() => {
+                    axios
+                      .get(clearAuthenticatedUsersFromServerURL)
+                      .then((response) => {
+                        console.log("result from getAuthenticatedUsers", response);
+                        setAuthenticatedUsers(response.data);
+                        console.log("authenticated users", authenticatedUsers);
+                      })
+                      .catch((error) => {
+                        console.log(error);
+                      });
+                    axios
+                      .get(getAuthenticatedUsersFromServerURL)
+                      .then((response) => {
+                        console.log("result from getAuthenticatedUsers", response);
+                        setAuthenticatedUsers(response.data);
+                        console.log("authenticated users", authenticatedUsers);
+                      })
+                      .catch((error) => {
+                        console.log(error);
+                      });
+
+                    alert("Authenticated Users Cleared!");
+                    setauthenticatedUsersUpdated(!authenticatedUsersUpdated);
+                  }}>Clear Authenticated Users</button>
                 </div>
               </Card.Footer>
             </Card>
